@@ -1,7 +1,6 @@
 const expect = require('expect');
 const request = require('supertest');
 const { ObjectID } = require('mongodb');
-const _ = require('lodash');
 
 const { app } = require('./../server');
 const { Todo } = require('./../models/todo');
@@ -120,7 +119,7 @@ describe('DELETE /todos/:id', () => {
                     return done(err);
                 }
                 Todo.findById(hexId).then(todo => {
-                    expect(todo).toBeNull();
+                    expect(todo).toBeFalsy();
                     done();
                 }).catch(done);
             });
@@ -138,7 +137,7 @@ describe('DELETE /todos/:id', () => {
                     return done(err);
                 }
                 Todo.findById(hexId).then(todo => {
-                    expect(typeof todo).toBe('object');
+                    expect(todo).toBeTruthy();
                     done();
                 }).catch(done);
             });
@@ -226,7 +225,7 @@ describe('PATCH /todos/:id', () => {
             .expect(res => {
                 expect(res.body.todo.text).toBe(text);
                 expect(res.body.todo.completed).toBe(false);
-                expect(res.body.todo.completedAt).toBeNull();
+                expect(res.body.todo.completedAt).toBeFalsy();
             })
             .end((err, res) => {
                 if (err) {
@@ -236,7 +235,7 @@ describe('PATCH /todos/:id', () => {
                     expect(todo.text).toBe(text);
                     expect(typeof todo.completed).toBe('boolean');
                     expect(todo.completed).toBe(false);
-                    expect(todo.completedAt).toBeNull();
+                    expect(todo.completedAt).toBeFalsy();
                     done();
                 }).catch(done)
             });
@@ -277,8 +276,8 @@ describe('POST /users', () => {
             .send({ email, password })
             .expect(200)
             .expect(res => {
-                expect(typeof res.headers['x-auth']).toBe('string');
-                expect(typeof res.body._id).toBe('string');
+                expect(res.headers['x-auth']).toBeTruthy();
+                expect(res.body._id).toBeTruthy();
                 expect(res.body.email).toBe(email);
             })
             .end(err => {
@@ -287,7 +286,7 @@ describe('POST /users', () => {
                 }
 
                 User.findOne({ email }).then(user => {
-                    expect(user).not.toBeNull();
+                    expect(user).toBeTruthy();
                     expect(user.password).not.toBe(password);
                     done();
                 }).catch(done);
@@ -321,14 +320,14 @@ describe('POST /users/login', () => {
             })
             .expect(200)
             .expect(res => {
-                expect(typeof res.headers['x-auth']).toBe('string');
+                expect(res.headers['x-auth']).toBeTruthy();
             })
             .end((err, res) => {
                 if (err) {
                     return done(err);
                 }
                 User.findById(users[1]._id).then(user => {
-                    expect(_.pick(user.tokens[1], ['access', 'token'])).toEqual({
+                    expect(user.toObject().tokens[1]).toMatchObject({
                         access: 'auth',
                         token: res.headers['x-auth']
                     });
@@ -346,7 +345,7 @@ describe('POST /users/login', () => {
             })
             .expect(400)
             .expect(res => {
-                expect(res.headers['x-auth']).toBeUndefined();
+                expect(res.headers['x-auth']).toBeFalsy();
             })
             .end((err, res) => {
                 if (err) {
